@@ -1,0 +1,359 @@
+/**
+ * Created by Acci on 2017/9/6.
+ */
+$(function(){
+	if(window.$matchsCurrent=="1"){
+		$("#login_normal").remove();
+	}
+	var userType=getUrlParamByKey("ut");
+	var userTypeMustBe=getUrlParamByKey("ub")||0;
+	if(!userType){
+		userType=getHrefParamByKey("ut");
+	}
+	if(userType){
+		// delCookie("LQUSERTYPE");
+		setCookie("_LQUSERTYPE",userType);
+	}else{
+		userType=getCookie("_LQUSERTYPE");
+	}
+
+    //导航
+	try{
+	if(location.href.indexOf("?test=testing")>0)setCookie("testing","test",60*30*1000);
+	}catch(e){}
+	    $.ajax({
+	        url:'/api/action/account/current/user?ub='+userTypeMustBe+"&t"+new Date().getTime(),
+	        type:"POST",
+	        async:false,
+	        success:function(res){
+
+	            if(res.resultCode===0) {//成功.
+	            	var u=res.resultData;	            	
+	            	window.currentUser=u;
+	            	if(window.checkedUser){
+						try {
+							window.checkedUser(u);
+						}catch (e) {
+							console.error(e);
+						}
+					}
+	            	if(window.checkedUserFuns && window.checkedUserFuns.length>0){
+	            		for(var i in  window.checkedUserFuns){
+	            			try {
+								window.checkedUserFuns[i](u);
+							}catch (e) {
+								console.error(e);
+							}
+						}
+
+					}
+	                $("#login_logined [identityId]").not("[identityId="+window.currentUser.identityId+"]").remove();
+			        $("#login_logined [identityId] [authStatus]").not("[authStatus="+window.currentUser.authStatus+"]").remove();
+					$("#login_normal").remove();
+			        $("#login_logined").show();
+			        var headImg=window.currentUser.accountPortrait?("/api/action/oss/getImageStream/"+window.currentUser.accountPortrait):($STATIC_URL+"/account/images/default_head_img/"+window.currentUser.identityId+"/"+window.currentUser.accountId%6+".png");
+			        if(window.currentUser.accountPortrait && window.currentUser.accountPortrait.indexOf("http")>-1){
+			        	headImg=window.currentUser.accountPortrait;
+			        }
+			        $("#login_logined .head .photo").attr("src",headImg);
+			        $("#login_logined .head  .name").text(window.currentUser.identityId==1?(window.currentUser.accountNickname||""):(window.currentUser.univName||""));
+			        if(u.identityId) {
+			        	//有身份
+						$(".changeid [showid="+u.identityId+"]").show();
+						if(u.identityId!=parseInt( userType)+1){
+							//用户所选身份与当前身份不一致
+							if(u.identityId==1){
+								//自动切换为学生了
+								setCookie("_LQUSERTYPE",0);
+								showWdDialog(2,
+									'您当前账号没有<span class="c-blue">院校身份</span>，<br/>已将您切换为学生身份',
+									"如需开通院校功能，请认证院校身份",
+									["认证院校身份","我是学生"],
+									function(){									},
+									function () {
+										turnIdentityId(0,'/pages/dasai/college_auth.html?ut=1&ub=1');
+									}
+
+								)
+							}else if(u.identityId==2){
+								//自动切换为学生了
+								setCookie("_LQUSERTYPE",1);
+								showWdDialog(2,
+									'您当前账号没有<span class="c-blue">学生身份</span>，<br/>已将您切换为院校身份',
+									"如需开通学生功能，请点击认证学生身份",
+									["认证学生身份","我是院校"],
+									function(){},
+									function () {
+										turnIdentityId(0,'/pages/dasai/stupersonalauth.html?ut=0&ub=1');
+									}
+								)
+							}
+						}
+						$.post(
+							"/api/message/findMaxMsgInfo"
+						).success(function (res) {
+							if (res.succeed) {
+								$("#newsNum").html(res.data.msgcount > 99 ? 99 : res.data.msgcount);
+								if (res.data.msgcount == 0) {
+									$("#newsNum").hide();
+								} else {
+									$("#newsNum").show();
+								}
+								if (res.data.hasNew) {
+									showNewsMsg();
+								}
+							}
+
+						});
+
+
+					}else {
+			        	//无身份用户
+						$(".changeid [showid]").show();
+						$("#login_normal").show();
+						$("#login_logined .bell-wrap").remove();
+						$("#login_logined .name ").css("background-image","none");
+					}
+			        $("#newsHead").show();
+	            }else if(res.resultCode===-503 || (res.resultCode==300605 && res.resultMsg=="[-503]")){ //测试中
+					if(window.errorLoginCall){
+						try{
+							window.errorLoginCall(res);
+						}catch (e) {
+							console.error(e);
+						}
+					}
+					if(window.errorLoginCalls && window.errorLoginCalls.length>0){
+						for(var i in  window.errorLoginCalls){
+							try {
+								window.errorLoginCalls[i]();
+							}catch (e) {
+								console.error(e);
+							}
+						}
+
+					}
+
+	            	try{
+	            	var tt=getCookie("testing");
+	        		if("test"!=tt){
+		            	alert("服务器目前正在维护中，维护期间可能产生数据波动，请等待维护之后再进行操作，以免给您带来不必要的损失。");
+		            	location="/pages/dasai/updating.html";
+	        		}
+	        		}catch(e){}
+	            }else{ //未登录	            	
+					if(window.errorLoginCall){
+						window.errorLoginCall(res);
+					}
+	                $("#login_logined").remove();
+	                $("#login_normal").show();
+	                $("#newsHead").hide();
+	                if(!window.$SHOW_LOGINDIALOG_NOT) {
+	            		location.href="/pages/dasai/index.html";
+	                    //$("#btnShowLoginDialog").trigger("click");
+	                }
+	            }
+	        }
+	    });
+
+	
+    
+    //退出
+    $("#login_logined .quit").click(function(){
+        $.yehDialog({
+            dialogWidth:445,
+            title:"信息",
+            content:'<p style="padding:0 20px 20px 20px;" class="mt15 h5 center">是否确定退出?</p>',
+            okText:"确定",
+            cancelText:"取消",
+            ok:function(){
+				delLqtokenCookie();
+                $.post("/api/action/account/current/logout").success(function(res){
+                    if(res.resultCode===0){
+                        location=$URL_LANQIAOBEIDASAI+"/pages/dasai/index.html";
+                    }
+                });
+            },
+            Cancel: function() {
+                $(this).dialog( "close" );
+            }
+        });
+    });
+    //登录
+    /** 20190619 Acci 整合登录
+    $("#btnShowLoginDialog").click(function(){
+        if($("#loginDialog").length==0) {
+            var loginDialog = $('<div class="login" id="loginDialog" >'
+                + '<div class="main" style="padding:0;">'
+                + '<iframe id="login_iframe" width="358" height="446" frameborder="0" src="'
+                //+ '<iframe id="login_iframe" width="430" height="585" frameborder="0" src="'
+                //+ '/pages/account/login_sub.html?onload=showLoginDialog&loginOk=loginOk&close=closeLoginDialog" style="padding:0"></iframe>'
+                + '/pages/account/login_sub_wxr.html?onload=showLoginDialog&loginOk=loginOk&close=closeLoginDialog" style="padding:0;width: 358px;height: 446px;"></iframe>'
+                + '</div>'
+                + '</div>');
+            loginDialog.appendTo($("body"));
+            $(".headerlogin").hide();
+            $(".center.picture").hide();
+            refreshImgCode($("#loginDialog"));//重置验证码
+        }
+         //   showLoginDialog();
+
+    });
+    */
+    $("#btnShowLoginDialog").click(function(){
+    	toWxrLoginPage(0,"login"); //学生登录
+    });
+    $("#btnShowStuReg").click(function(){
+    	toWxrLoginPage(0,"register"); //学生注册
+    });
+    
+    $("#btnShowTeacherLogin").click(function(){
+    	toWxrLoginPage(1,"login"); //院校入口  1
+    });
+
+
+  	$("#btnTeaAuth").click(function(){
+		if(!currentUser||currentUser.collegeAuthStatus!=4){
+			showWdDialog(1,
+				'您当前的账号未认证<span class="c-blue">院校身份</span>，<br/>是否认证院校身份？',
+				null,
+				["暂不认证","认证院校身份"],
+				function(){
+					turnIdentityId(1,'/pages/dasai/college_auth.html?ut=1&ub=1');
+				}
+			)
+		}else{
+			turnIdentityId(1,'/pages/dasai/college_auth.html?ut=1&ub=1');
+		}
+
+    });
+	$("#btnStuAuth").click(function(){
+		if(!currentUser||currentUser.stuAuthStatus!=4){
+			showWdDialog(1,
+				'您当前的账号未认证<span class="c-blue">学生身份</span>，<br/>是否认证学生身份？',
+				null,
+				["暂不认证","认证学生身份"],
+				function(){
+					turnIdentityId(0,'/pages/dasai/stupersonalauth.html?ut=0&ub=1');
+				}
+			)
+		}else{
+			turnIdentityId(0,'/pages/dasai/stupersonalauth.html?ut=0&ub=1');
+		}
+
+	});
+
+
+    function toWxrLoginPage(usertype,action){
+    	var localUrl=location.href;
+    	if(localUrl.indexOf("?")>0){
+			localUrl=localUrl+"&ut="+usertype
+		}else{
+			localUrl=localUrl+"?ut="+usertype
+		}
+    	var backurl= encodeURIComponent(localUrl);
+    	//location.href=$WXR_URL+"/api/outer/entry?usertype="+usertype+"&action="+action+"&backurl="+backurl;
+    	location.href=$WXR_URL+"/?usertype="+usertype+"&action="+action+"&backurl="+backurl;
+    }
+    //----------参数处理结束--------
+    window.showLoginDialog=function(){
+        showDialog($("#loginDialog"));
+    }
+    window.loginOk=function(data){
+        location.reload();
+        return;
+        var $scope= $(".userlogin").scope();
+        $scope.nickName=data.accountEmail;
+        $scope.headImg=data.accountPortrait?data.accountPortrait:$STATIC_URL+"/common/image/logo.png";
+        $scope.$apply();
+        closeLoginDialog();
+    }
+    window.closeLoginDialog=function(){
+        $("#loginDialog").remove();
+    }
+    $(".navigation .menu .act").removeClass("act");
+    $(".navigation .menu .link").not(".newsHead").find("a").each(function(){
+        var href=$(this).attr("href");
+        if(!href)return;
+        if(location.href.indexOf(href)>-1){
+            $(this).parents(".link").addClass("act");
+        }
+    });
+    if($(".navigation .menu .act").length==0){
+        $(".navigation .menu .act:first").addClass("act");
+    }
+})
+function openWeixinPage(){	
+	console.log("opening......");
+	$("#weixin_login_a_to").click();	
+}
+
+function showNewsMsg(){
+	$("#news-msg").css("visibility","visible");
+	$("#news-msg").show();
+	setTimeout(function(){
+		$("#news-msg").hide();
+	},5000);
+}
+
+$(function () {
+	//顶部焦点
+	var href=location.href;
+	var pathname=location.pathname;
+	var search=location.search;
+	var pathnameLike=[];
+	var searchLike=[];
+	$(".left-wrap a").each(function () {
+		var h=$(this).attr("href");
+		if(h && h.indexOf(pathname)>-1){
+			pathnameLike.push($(this));
+			if(h.indexOf(search)>-1){
+				searchLike.push($(this));
+			}
+		}
+	})
+	if(searchLike.length>0){
+		menuActive(searchLike[0]);
+	}else if(pathnameLike.length>0){
+		menuActive(pathnameLike[0]);
+	}else{
+		$(".left-wrap li.link:first").addClass("menu-active");
+	}
+});
+function menuActive($eleA){
+	$(".left-wrap .menu-active").removeClass("menu-active");
+	if($eleA.parents("li.link").length>0){
+		$eleA.parents("li.link").addClass("menu-active");
+	}else {
+		$(".left-wrap li.link:first").addClass("menu-active");
+	}
+}
+
+function turnIdentityId(userType,toUrl){
+	let tourl=toUrl;
+	setCookie("_LQUSERTYPE",userType);
+
+		$.ajax({
+			url: '/api/action/account/current/user?ub=1&t' + new Date().getTime(),
+			type: "POST",
+			async: false,
+			success: function (res) {
+				if(res.resultCode===0) {//成功.
+					// setTimeout(function () {
+						location.href=tourl;
+					// },1000)
+				}
+			}
+		});
+
+
+}
+
+window.checkedUserFuns=[]
+function pushUserCall(fun) {
+	window.checkedUserFuns.push(fun);
+}
+window.errorLoginCalls=[]
+function pushUserErrorCall(fun) {
+	window.errorLoginCalls.push(fun);
+}

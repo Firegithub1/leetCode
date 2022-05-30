@@ -1,0 +1,275 @@
+;(function($, window, undefined) {
+    
+    var Dialog = function(options) {
+    	this.settings = $.extend({}, Dialog.defaults, options);
+    	this.init();
+    }
+	
+    Dialog.prototype = {
+    	
+    	//初始化	
+    	init : function() {
+            this.createHtml();
+        },
+        //创建dom
+    	createHtml : function(){
+    	 	var $ok = (this.settings.okText.length > 0) ? '<button id="ok" style="margin-left:32px;">'+this.settings.okText+'</button>' : '';
+    	 	var $cancel = (this.settings.cancelText.length > 0) ? '<button id="cancel" style="margin-left:0px;">'+this.settings.cancelText+'</button>' : '';
+    	 	
+    	 	var confirmHtml = '<div class="dialog">'+
+							'<div class="content" style="width:'+this.settings.dialogWidth+'px;margin-left:'+(-this.settings.dialogWidth/2)+'px">'+
+								'<img src="'+$STATIC_URL+'/dasai/images/icon/icon-close.png" class="close" />'+
+								'<p class="title" style="margin: 0;">'+this.settings.title+'</p>'+
+								'<div class="main" style="font-size: 16px;">'+this.settings.content+'</div>'+
+								'<div class="btns">'+ $cancel + $ok +'</div>'+
+							'</div>'+
+						'</div>';
+						
+			this.dialog = $(confirmHtml).appendTo("body");
+           
+           var _this = this;
+			// 设置ok按钮
+           this.dialog.find("#ok").click(function(){
+           		_this.ok();
+           });
+            // 设置cancel按钮
+           this.dialog.find("#cancel").click(function(){
+           		_this.cancel();
+           });
+             // 设置关闭差号
+            this.dialog.find("img.close").click(function(){
+            	_this.close();
+            });
+    	},
+    	//点击确定按钮
+    	ok : function() {
+    		this.close();
+    		var okCallback = this.settings.ok();
+    		if (typeof (callback) == 'function') {
+                okCallback;
+            }
+    		/*var okCallback = this.settings.ok();
+            if (okCallback == undefined || okCallback) {
+                this.close();
+            }*/
+        },
+        //点击取消按钮
+        cancel : function() {
+        	this.close();
+        	if(this.settings.cancel){
+        		var cancelCallback = this.settings.cancel();
+	        	if (typeof (cancelCallback) == 'function') {
+	                cancelCallback;
+	            }
+        	}
+        	
+        	/*var cancelCallback = this.settings.cancel();
+            if (cancelCallback == undefined || cancelCallback) {
+                this.close();
+            }*/
+        },
+    	//关闭确认框
+        close: function () {
+            this.dialog.remove();
+            if (this.settings.close) {
+                var closeCallback = this.settings.close();
+                if (typeof (closeCallback) == 'function') {
+                    closeCallback;
+                }
+            }
+        }
+    }
+     //默认配置
+    Dialog.defaults = {
+    	dialogWidth:0,//弹出框的宽度
+        content: '确认框内容',
+        title: '确认框内容标题',
+        /*ok: function(){},// 确定按钮回调函数
+        cancel: function(){},//  // 取消按钮回调函数*/
+       ok:null,
+       cancel:null,
+       	okText: '',// 确定按钮文字
+        cancelText: '',// 取消按钮文字
+    }
+    var yehDialog = function(options) {
+        return new Dialog(options);
+    }
+  	window.yehDialog = $.yehDialog = yehDialog;
+
+    // 切换身份弹窗
+    var Model = function(options) {
+        this.settings = $.extend({}, Dialog.defaults, options);
+        this.init();
+    }
+
+    Model.prototype = {
+        //初始化
+        init : function() {
+            this.createHtml();
+        },
+        //创建dom
+        createHtml : function(){
+            var $btn1 = (this.settings.btn1.name.length > 0) ? '<button id="btn1">'+this.settings.btn1.name+'</button>' : '';
+            var $btn2 = (this.settings.btn2.name.length > 0) ? '<button id="btn2">'+this.settings.btn2.name+'</button>' : '';
+
+            var confirmHtml = '<div class="model">'+
+                '<div class="content" style="width:'+this.settings.dialogWidth+'px;margin-left:'+(-this.settings.dialogWidth/2)+'px">'+
+                '<img src="'+$STATIC_URL+'/dasai/images/icon/icon-close.png" class="close"/>'+
+                '<div class="main">';
+            if(this.settings.icon == 1){
+                confirmHtml += '<img class="icon" src="'+$STATIC_URL+'/dasai/images/icon/noAuth.png" />';
+            }else if(this.settings.icon == 2) {
+                confirmHtml += '<img class="icon" src="'+$STATIC_URL+'/dasai/images/icon/switchIdentity.png" />';
+            }
+            confirmHtml +='<div class="container"><p>'+this.settings.content+'</p></div>';
+            if(this.settings.msg){
+                confirmHtml += '<div class="msg">'+this.settings.msg+'</div>';
+            }
+            confirmHtml +='</div><div class="btns">'+ $btn1 + $btn2 +'</div></div></div>';
+
+            this.model = $(confirmHtml).appendTo("body");
+            var _this = this
+            // 设置按钮1
+            this.model.find("#btn1").click(function(){
+                _this.model.remove();
+                if (_this.settings.btn1.func && typeof (_this.settings.btn1.func) == 'function') {
+                    _this.settings.btn1.func()
+                }
+            });
+            // 设置按钮2
+            this.model.find("#btn2").click(function(){
+                _this.model.remove();
+                if (_this.settings.btn2.func && typeof (_this.settings.btn2.func) == 'function') {
+                    _this.settings.btn2.func()
+                }
+            });
+            // 设置关闭差号
+            this.model.find("img.close").click(function(){
+                _this.model.remove();
+            });
+        },
+    }
+    //默认配置
+    Model.defaults = {
+        icon: 1, // 1、登录成功后弹窗；2、切换账号时候弹窗
+        dialogWidth:0,//弹出框的宽度
+        content: '',
+        msg: '',
+        btn1: {
+            name: '',
+            func: function(){
+                this.model.remove();
+            }
+        },
+        btn2: {
+            name: '',
+            func: null
+        }
+    }
+    var wdModel = function(options) {
+        return new Model(options);
+    }
+    window.wdModel = $.wdModel = wdModel;
+
+    window.showWdDialog=function(icon,content,_msg,btns,fun2,fun1) {
+        wdModel( {
+            icon: icon, // 1、登录成功后弹窗；2、切换账号时候弹窗
+            dialogWidth:445,//弹出框的宽度
+            content:content,
+            msg: _msg,
+            btn1: {
+                name: btns[0],
+                func: fun1
+            },
+            btn2: {
+                name: btns[1],
+                func: fun2
+            }
+        })
+    }
+
+    // 证书弹窗
+    var CertModel = function(options) {
+        this.settings = $.extend({}, Dialog.defaults, options);
+        this.init();
+    }
+
+    CertModel.prototype = {
+        //初始化
+        init : function() {
+            this.createHtml();
+        },
+        //创建dom
+        createHtml : function(){
+            var $btn1 = (this.settings.btn1.name.length > 0) ? '<button id="btn1">'+this.settings.btn1.name+'</button>' : '';
+            var $btn2 = (this.settings.btn2.name.length > 0) ? '<button id="btn2">'+this.settings.btn2.name+'</button>' : '';
+
+            var confirmHtml = '<div class="model">'+
+                '<div class="content" style="width:'+this.settings.dialogWidth+'px;margin-left:'+(-this.settings.dialogWidth/2)+'px">'+
+                '<img src="'+$STATIC_URL+'/dasai/images/icon/icon-close.png" class="close"/>'+
+                '<div class="main">';
+            confirmHtml += '<img class="icon" src="'+$STATIC_URL+'/dasai/images/icon/noAuth.png" />';
+            confirmHtml +='<div class="container"><p>'+this.settings.content+'</p></div></div><div class="btns">'+ $btn1 + $btn2 +'</div></div></div>';
+
+            this.model = $(confirmHtml).appendTo("body");
+            var _this = this
+            // 设置按钮1
+            this.model.find("#btn1").click(function(){
+                _this.model.remove();
+                if (_this.settings.btn1.func && typeof (_this.settings.btn1.func) == 'function') {
+                    _this.settings.btn1.func()
+                }
+            });
+            // 设置按钮2
+            this.model.find("#btn2").click(function(){
+                _this.model.remove();
+                if (_this.settings.btn2.func && typeof (_this.settings.btn2.func) == 'function') {
+                    _this.settings.btn2.func()
+                }
+            });
+            // 设置关闭差号
+            this.model.find("img.close").click(function(){
+                _this.model.remove();
+            });
+        },
+    }
+    //默认配置
+    CertModel.defaults = {
+        dialogWidth:0,//弹出框的宽度
+        content: '',
+        btn1: {
+            name: '',
+            func: function(){
+                this.model.remove();
+            }
+        },
+        btn2: {
+            name: '',
+            func: null
+        }
+    }
+    var certModel = function(options) {
+        return new CertModel(options);
+    }
+    window.certModel = $.certModel = certModel;
+    // 获奖证书弹窗
+    window.certModel=function(content,btns,fun2,fun1) {
+        certModel( {
+            dialogWidth:445,//弹出框的宽度
+            content:content,
+            btn1: {
+                name: btns[0],
+                func: fun1
+            },
+            btn2: {
+                name: btns[1],
+                func: fun2
+            }
+        })
+    }
+    // window.certModel("蓝桥杯大赛获奖选手开放申领<br/><a style='color: #2E7EEE;' href='https://dasai.lanqiao.cn/pages/dasai/news_detail.html?id=1240' target='_blank'> 《工业和信息化人才岗位能力评价证书》</a>。",["取消","了解更多"],function () {
+    //     window.open("https://dasai.lanqiao.cn/pages/dasai/news_detail.html?id=1240")
+    // },function () {
+    //     console.log("确定,关闭")
+    // })
+})(window.jQuery || window.Zepto, window);
