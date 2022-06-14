@@ -29,3 +29,4 @@ let nums = [2, 7, 11, 15];
 let target = 9;
 
 console.log(twoSum(nums, target));
+console.log("%c火火最美了",'font-size:bold;color:red;');

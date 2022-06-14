@@ -16,13 +16,13 @@
 
 var twoSum = function (nums, target) {
     const map = new Map();
-    for (let i = 0; i < nums.length; i++) {
+    for (let i = 0, l = nums.length; i < l; i++) {
         const v = nums[i];
         const diff = target - v;
         if (map.has(diff)) {
-            return [map.get(diff),i]
+            return [map.get(diff), i]
         }
-        map.set(v,i);
+        map.set(v, i);
     }
 };
 let nums = [2, 7, 11, 15],
