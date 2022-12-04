@@ -17,6 +17,8 @@ var containsDuplicate = function(nums) {
         }
         set.add(i);
     }
+    let x = set.entries();
+    console.log(x);
     return false;
 };
 var nums = [1, 1, 1, 3, 3, 4, 3, 2, 4, 2];
