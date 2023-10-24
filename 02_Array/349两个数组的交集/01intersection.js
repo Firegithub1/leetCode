@@ -1,4 +1,4 @@
-var intersect = function(nums1, nums2) {
+var intersect = function (nums1, nums2) {
     nums1.sort((a, b) => { a - b; });
     console.log(nums1);
     nums2.sort((a, b) => a - b);
@@ -19,5 +19,7 @@ var intersect = function(nums1, nums2) {
 }
 
 let nums1 = [1, 2, 2, 1, 12, 21],
-    nums2 = [2, 2, 12, 21, ];
+    nums2 = [2, 2, 12, 21,];
 console.log(intersect(nums1, nums2));
+
+// ! 输出结果中的每个元素一定是唯一的。

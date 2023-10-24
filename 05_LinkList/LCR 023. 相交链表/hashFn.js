@@ -23,7 +23,7 @@ var getInterSectionNode = function (headA, headB) {
     tmp = tmp.next
   }
 
-  tmp = headBw
+  tmp = headB
 
   while (tmp !== null) {
     if (set.has(tmp)) {
