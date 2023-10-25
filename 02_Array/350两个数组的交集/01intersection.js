@@ -1,24 +1,27 @@
 var intersect = function (nums1, nums2) {
-    nums1.sort((a, b) => { a - b; });
-    console.log(nums1);
-    nums2.sort((a, b) => a - b);
-    let f = 0;
-    let s = 0;
-    let results = [];
-
-    while (f < nums1.length && s < nums2.length) {
-        if (nums1[f] == nums2[s]) {
-            results.push(nums1[f]);
-            f++;
-            s++;
+    let m = nums1.length > nums2.length ? nums1 : nums2
+    let n = nums1.length > nums2.length ? nums2 : nums1
+    let map = new Map()
+    m.forEach(item => {
+        if (map.has(item)) {
+            let i = map.get(item)
+            map.set(item, ++i)
         } else {
-            nums1[f] > nums2[s] ? s++ : f++;
+            map.set(item, 1)
         }
-    }
-    return results;
+    });
+    let nums = []
+    n.forEach(item => {
+        let i = map.get(item)
+        if (i--) {
+            map.set(item, i)
+            nums.push(item)
+        }
+    })
+    return nums
 }
 
 let nums1 = [1, 2, 2, 1, 12, 21],
-    nums2 = [2, 2, 12, 21,];
+    nums2 = [2, 2, 12, 21, 1, 13];
 console.log(intersect(nums1, nums2));
 

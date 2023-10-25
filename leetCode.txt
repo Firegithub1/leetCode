@@ -1,3 +1,0 @@
-    for (let i = 0,len = s.length;i<len; i++)
-    比直接i<s.length较快几毫秒
-    //i和len两个变量是在for循环的第一个声明中，二者只会初始化一次，这要比下面这种写法快：
